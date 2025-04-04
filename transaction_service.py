@@ -1,3 +1,6 @@
+from http.client import HTTPException
+import os
+import requests
 from db import get_db_connection
 
 def check_balance(client_id: int, amount: float) -> bool:
@@ -36,8 +39,36 @@ def check_balance(client_id: int, amount: float) -> bool:
         if conn:
             conn.close()
 
-def generate_sms(amount: float, status: str) -> str:
-    """Generate SMS response message based on transaction status."""
+def generate_sms(id: int, amount: float, status: str) -> None:
+    conn = None
+    cursor = None
+    phoneNumber = None
+
+    try:
+        conn, cursor = get_db_connection()
+
+        cursor.execute('SELECT "phoneNumber" FROM users WHERE id = %s;', (id,))
+        result = cursor.fetchone()
+        phoneNumber = result[0]
+
+    # except HTTPException:
+    #     raise
+    # except Exception as e:
+        # raise HTTPException(
+        #     # status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        #     detail=f"Failed to fetch user details: {str(e)}"
+        # )
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+    ip_add = os.getenv('ip')
+    url = f"{ip_add}:8080"
+    data={'phoneNumber': f"+91{phoneNumber}",
+          'message':'Hello'}
+    x=requests.post(url,json=data)
     return f"{amount}|{status}"
 
 def create_transaction(sender_id: int, receiver_id: int, amount: float, status: str) -> bool:
