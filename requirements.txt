@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+pyngrok
+psycopg2-binary
+pydantic
+dotenv
+python-dotenv
+python-multipart
