@@ -6,3 +6,4 @@ pydantic
 dotenv
 python-dotenv
 python-multipart
+requests
