@@ -91,7 +91,7 @@ async def receive_sms(Body: str = Form(...)) -> Dict[str, Any]:
         if not has_sufficient_balance:
             # Insufficient balance case
             create_transaction(sender_id, receiver_id, amount, "insufficient_balance")
-            response_sms = generate_sms(amount, "unsuccessful")
+            response_sms = generate_sms(sender_id, amount, "unsuccessful")
 
             raise HTTPException(
                 status_code=status.HTTP_402_PAYMENT_REQUIRED,
@@ -108,7 +108,7 @@ async def receive_sms(Body: str = Form(...)) -> Dict[str, Any]:
         if not update_success:
             # Transaction failed during update
             create_transaction(sender_id, receiver_id, amount, "failed")
-            response_sms = generate_sms(amount, "failed")
+            response_sms = generate_sms(sender_id, amount, "failed")
 
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -121,7 +121,8 @@ async def receive_sms(Body: str = Form(...)) -> Dict[str, Any]:
 
         # Transaction successful
         create_transaction(sender_id, receiver_id, amount, "successful")
-        response_sms = generate_sms(amount, "successful")
+        response_sms = generate_sms(sender_id, amount, "successful")
+        response_sms = generate_sms(receiver_id, amount, "successful")
 
         return {
             "status": "success",
