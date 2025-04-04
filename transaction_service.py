@@ -39,7 +39,7 @@ def check_balance(client_id: int, amount: float) -> bool:
         if conn:
             conn.close()
 
-def generate_sms(id: int, amount: float, status: str) -> None:
+def generate_sms(id: int, amount: float, status: str, type: str) -> None:
     conn = None
     cursor = None
     phoneNumber = None
@@ -67,7 +67,7 @@ def generate_sms(id: int, amount: float, status: str) -> None:
     ip_add = os.getenv('ip')
     url = f"http://{ip_add}"
     data={'phoneNumber': f"+91{phoneNumber}",
-          'message':f"{amount}|{status}"}
+          'message':f"{amount}|{status}|{type}"}
     requests.post(url,json=data)
 
 def create_transaction(sender_id: int, receiver_id: int, amount: float, status: str) -> bool:
