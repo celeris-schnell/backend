@@ -65,11 +65,10 @@ def generate_sms(id: int, amount: float, status: str) -> None:
             conn.close()
 
     ip_add = os.getenv('ip')
-    url = f"{ip_add}:8080"
+    url = f"http://{ip_add}"
     data={'phoneNumber': f"+91{phoneNumber}",
-          'message':'Hello'}
-    x=requests.post(url,json=data)
-    return f"{amount}|{status}"
+          'message':f"{amount}|{status}"}
+    requests.post(url,json=data)
 
 def create_transaction(sender_id: int, receiver_id: int, amount: float, status: str) -> bool:
     """
