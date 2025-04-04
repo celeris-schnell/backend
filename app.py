@@ -29,7 +29,7 @@ async def sync_user(request: SyncRequest) -> Dict[str, Any]:
     try:
         conn, cursor = get_db_connection()
 
-        cursor.execute("SELECT id, name, balance FROM users WHERE id = %s;", (request.id,))
+        cursor.execute("SELECT id, name, balance, phoneNumber FROM users WHERE id = %s;", (request.id,))
         user = cursor.fetchone()
 
         if not user:
@@ -38,11 +38,12 @@ async def sync_user(request: SyncRequest) -> Dict[str, Any]:
                 detail="User not found"
             )
 
-        user_id, name, balance = user
+        user_id, name, balance , phoneNumber= user
         return {
             "id": user_id,
             "name": name,
-            "balance": balance
+            "balance": balance,
+            "phoneNumber":phoneNumber
         }
 
     except HTTPException:
@@ -91,13 +92,12 @@ async def receive_sms(Body: str = Form(...)) -> Dict[str, Any]:
         if not has_sufficient_balance:
             # Insufficient balance case
             create_transaction(sender_id, receiver_id, amount, "insufficient_balance")
-            response_sms = generate_sms(sender_id, amount, "unsuccessful","sent")
+            generate_sms(sender_id, amount, "unsuccessful","sent")
 
             raise HTTPException(
                 status_code=status.HTTP_402_PAYMENT_REQUIRED,
                 detail={
                     "status": "error",
-                    "message": response_sms,
                     "error_code": "INSUFFICIENT_FUNDS"
                 }
             )
@@ -108,25 +108,23 @@ async def receive_sms(Body: str = Form(...)) -> Dict[str, Any]:
         if not update_success:
             # Transaction failed during update
             create_transaction(sender_id, receiver_id, amount, "failed")
-            response_sms = generate_sms(sender_id, amount, "failed","sent")
+            generate_sms(sender_id, amount, "failed","sent")
 
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail={
                     "status": "error",
-                    "message": response_sms,
                     "error_code": "TRANSACTION_FAILED"
                 }
             )
 
         # Transaction successful
         create_transaction(sender_id, receiver_id, amount, "successful")
-        response_sms = generate_sms(sender_id, amount, "successful","sent")
-        response_sms = generate_sms(receiver_id, amount, "successful","recieved")
+        generate_sms(sender_id, amount, "successful","sent")
+        generate_sms(receiver_id, amount, "successful","recieved")
 
         return {
             "status": "success",
-            "message": response_sms,
             "transaction_status": "COMPLETED"
         }
 
