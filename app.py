@@ -2,6 +2,7 @@ from fastapi import FastAPI, Form, HTTPException, status
 from pydantic import BaseModel
 from typing import Dict, Any
 from auth import router as auth_router
+from fastapi.middleware.cors import CORSMiddleware
 
 from db import get_db_connection
 from transaction_service import check_balance, update_user, create_transaction, generate_sms
@@ -9,6 +10,15 @@ from utilities import parse_sms_message
 
 # Initialize FastAPI app
 app = FastAPI(title="Payment API", description="API for handling payments via SMS")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allow all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
+)
+
 app.include_router(auth_router)
 
 # Define request model for /sync endpoint
