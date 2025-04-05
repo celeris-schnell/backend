@@ -7,3 +7,4 @@ dotenv
 python-dotenv
 python-multipart
 requests
+pydantic[email]
