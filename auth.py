@@ -59,19 +59,24 @@ def login(payload: LoginRequest):
         conn, cursor = get_db_connection()
 
         cursor.execute("""
-            SELECT id, password FROM auth_table WHERE email = %s;
+            SELECT id, password, email, name, "phoneNumber" FROM auth_table WHERE email = %s;
         """, (payload.email,))
         result = cursor.fetchone()
 
         if not result:
             raise HTTPException(status_code=404, detail="Email not found")
 
-        user_id, stored_password = result
+        user_id, stored_password, email, name, phoneNumber = result
 
         if stored_password != payload.password:
             raise HTTPException(status_code=401, detail="Incorrect password")
 
-        return {"message": "Login successful", "user_id": user_id}
+        cursor.execute("""
+        SELECT balance FROM users WHERE id = %s;
+        """, (user_id, ))
+        balance = cursor.fetchone()
+
+        return {"message": "Login successful", "user_id": user_id, "name": name, "balance": balance[0], "email": email, "phoneNumber": phoneNumber}
 
     except Exception as e:
         print(f"Error during login: {e}")
