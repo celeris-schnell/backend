@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Form, HTTPException, status
 from pydantic import BaseModel
 from typing import Dict, Any
+from auth import router as auth_router
 
 from db import get_db_connection
 from transaction_service import check_balance, update_user, create_transaction, generate_sms
@@ -8,6 +9,7 @@ from utilities import parse_sms_message
 
 # Initialize FastAPI app
 app = FastAPI(title="Payment API", description="API for handling payments via SMS")
+app.include_router(auth_router)
 
 # Define request model for /sync endpoint
 class SyncRequest(BaseModel):
@@ -142,3 +144,60 @@ async def receive_sms(Body: str = Form(...)) -> Dict[str, Any]:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error processing transaction: {str(e)}"
         )
+
+class AddBalanceRequest(BaseModel):
+    user_id: int
+    amount: int
+
+@app.post("/addbalance",
+    status_code=status.HTTP_200_OK,
+    responses={
+        200: {"description": "Balance updated successfully"},
+        404: {"description": "User not found"},
+        500: {"description": "Internal server error"}
+    })
+def add_balance(request: AddBalanceRequest) -> Dict[str, Any]:
+    conn = None
+    cursor = None
+
+    try:
+        conn, cursor = get_db_connection()
+
+        # Check if user exists
+        cursor.execute("SELECT balance FROM users WHERE id = %s;", (request.user_id,))
+        user = cursor.fetchone()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found"
+            )
+
+        current_balance = user[0]
+        new_balance = current_balance + request.amount
+
+        # Update balance
+        cursor.execute(
+            "UPDATE users SET balance = %s WHERE id = %s;",
+            (new_balance, request.user_id)
+        )
+        conn.commit()
+
+        return {
+            "status": "success",
+            "user_id": request.user_id,
+            "new_balance": new_balance
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update balance: {str(e)}"
+        )
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
