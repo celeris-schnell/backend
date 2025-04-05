@@ -1,5 +1,8 @@
+from fastapi import HTTPException
 from typing import Optional
 from dataclasses import dataclass
+
+from db import get_db_connection
 
 @dataclass
 class SMSData:
@@ -45,3 +48,27 @@ def parse_sms_message(message: str) -> Optional[SMSData]:
     except Exception as e:
         print(f"Error parsing SMS message: {str(e)}")
         return None
+
+def create_user(id: int, balance: int, name: str, phoneNumber: str):
+    conn = None
+    cursor = None
+
+    try:
+        conn, cursor = get_db_connection()
+
+        cursor.execute("""
+            INSERT INTO users (id, balance, name, "phoneNumber")
+            VALUES (%s, %s, %s, %s)
+        """, (id, balance, name, phoneNumber))
+
+        conn.commit()
+
+    except Exception as e:
+        print(f"Error during signup: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
