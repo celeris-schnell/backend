@@ -41,7 +41,7 @@ async def sync_user(request: SyncRequest) -> Dict[str, Any]:
     try:
         conn, cursor = get_db_connection()
 
-        cursor.execute("SELECT id, name, balance FROM users WHERE id = %s;", (request.id,))
+        cursor.execute('SELECT id, name, balance, "phoneNumber" FROM users WHERE id = %s;', (request.id,))
         user = cursor.fetchone()
 
         if not user:
@@ -50,11 +50,12 @@ async def sync_user(request: SyncRequest) -> Dict[str, Any]:
                 detail="User not found"
             )
 
-        user_id, name, balance = user
+        user_id, name, balance, phoneNumber = user
         return {
             "id": user_id,
             "name": name,
-            "balance": balance
+            "balance": balance,
+            "phoneNumber": phoneNumber
         }
 
     except HTTPException:
@@ -150,6 +151,7 @@ async def receive_sms(Body: str = Form(...)) -> Dict[str, Any]:
             detail=f"Invalid input data: {str(e)}"
         )
     except Exception as e:
+        print(e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error processing transaction: {str(e)}"
