@@ -37,6 +37,15 @@
 
 This is the backend for a self-hosted SMS server (kind of like our own Twilio) which will connect and make all database actions on Supabase later on.
 
+## The .env file
+
+user=<from supabase>
+password=<from supabase>
+host=<from supabase>
+port=<from supabase>
+dbname=<from supabase>
+ip=<phone-ip-address-with-port>
+
 ## Example Code
 
 ```python
